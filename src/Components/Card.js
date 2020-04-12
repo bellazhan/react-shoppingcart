@@ -8,7 +8,8 @@ const Card = ({prod_info}) => {
             <Paper variant='outlined'>
                 <div style={{display: 'flex', flexDirection: 'column', padding:10, alignItems:'center', justify: 'center', justifyContent: 'center'}}>
                     <img src={'data/products/' + prod_info.sku + '_2.jpg'} alt='shirt'/>
-                    <Typography>{prod_info.title}</Typography>
+                    <Typography variant='h6'>{prod_info.title}</Typography>
+                    <Typography>{prod_info.description}</Typography>
                     <Typography>{format(prod_info.price)}</Typography>
                     <Sizes />
                 </div>

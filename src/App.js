@@ -19,47 +19,34 @@ const App = () => {
     fetchProducts();
   }, []);
 
-  const prod_Obj = {};
-  for (let i = 0; i < products.length; i++){
-    prod_Obj[products[i].sku] = products[i];
-    // console.log("hey" + prod_Obj[i].sku);
+  function getTotal(){
+    var total = 0;
+    Object.entries(inCart).map(([key, value]) => {
+      total += value.price * value.quantity;
+    })
+    return total;
   }
-  // console.log("hello" + prod_Obj["12064273040195392"].title);
-
-  // function getTotal(){
-  //   var total = 0;
-  //   for (var prod in inCart){
-  //     total += prod.price * inCart[prod.sku];
-  //   }
-  //   return total;
-  // }
 
   const list = () => {
     return(
-    <div
-      role="presentation"
-      // onClick={setVisible(false)}
-      // onKeyDown={setVisible(false)}
-    >
+    <div role="presentation">
       <List>
       {
         Object.entries(inCart).map(([key, value]) => 
         <ListItem button key={key}>
-          {/* <Typography>{key} KEY {prod_Obj.key} KEY {prod_Obj["12064273040195392"].title} </Typography> */}
-          {/* <CartCard prod_info = {products.key} /> */}
-          <CartCard />
+          <CartCard prod_info={value} /> 
         </ListItem> )
       }
       </List>
       <Divider />
-      {/* <Typography>Total Price: {getTotal}</Typography> */}
-      <Typography>Total Price: $PP.PP</Typography>
+      <Typography variant='h5'>Total: {format(getTotal())} </Typography>
     </div>
     )
   };
 
   const handleDrawerOpen = () => {
     setVisible(true);
+    setInCart(inCart);
   };
 
   const handleDrawerClose = () => {
@@ -105,17 +92,15 @@ const App = () => {
     )
   }
 
-  const CartCard = () => {
-    // const item = prod_Obj[prod_info]
-    let prod_info = "12064273040195392";
-    let item = prod_Obj["12064273040195392"]
+  const CartCard = (prod_info) => {
+    let item = prod_info.prod_info;
     return(
     <div style={{margin: 5, display: 'flex', flexDirection:'row'}}>
-      <img src={'data/products/' + prod_info + '_2.jpg'} alt={item.title} height={100}/>
+      <img src={'data/products/' + item.sku + '_2.jpg'} alt={item.title} height={100}/>
       <div style={{display: 'flex', flexDirection: 'column'}}>
         <Typography>{item.title}</Typography>
-        <Typography>Size | {item.description} </Typography>
-        <Typography>Quantity: 1</Typography>
+        <Typography>M | {item.description} </Typography>
+        <Typography>Quantity: {item.quantity} </Typography>
         <Typography>{format(item.price)}</Typography>
       </div>
     </div>
@@ -127,7 +112,7 @@ const App = () => {
     return(
     <div style={{margin: 15, justifyContent: 'center', alignItems: 'center'}}>
       <Paper variant='outlined' style={{width: 300, height: 360}}>
-        <div style={{display: 'flex', flexDirection: 'column', padding:10, alignItems:'center', justify: 'center', justifyContent: 'center'}}>
+        <div style={{display: 'flex', flexDirection: 'column', padding:10, alignItems:'center', justifyContent: 'center'}}>
           <img src={'data/products/' + prod_info.sku + '_2.jpg'} alt={prod_info.title}/>
           <Typography variant='h6'>{prod_info.title}</Typography>
           <Typography>{prod_info.description}</Typography>
@@ -136,12 +121,15 @@ const App = () => {
           <Button 
             onClick={() => {
               if (inCart[prod_info.sku]){
-                newCart[prod_info.sku]++;
-                setInCart({12064273040195392: {title: "HELLO", price: 30}})
+                newCart[prod_info.sku].quantity += 1;
+                setInCart(newCart);
+                handleDrawerOpen();
               }
               else{
-                newCart[prod_info.sku] = 1;
-                setInCart({12064273040195392: {title: "BYE", price: 20}})
+                newCart[prod_info.sku] = prod_info;
+                newCart[prod_info.sku].quantity = 1;
+                setInCart(newCart);
+                handleDrawerOpen();
               }            
             }}
           >

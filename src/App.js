@@ -22,7 +22,9 @@ const App = () => {
   function getTotal(){
     var total = 0;
     Object.entries(inCart).map(([key, value]) => {
-      total += value.price * value.quantity;
+      if (value){
+        total += value.price * value.quantity;
+      }
     })
     return total;
   }
@@ -32,10 +34,15 @@ const App = () => {
     <div role="presentation">
       <List>
       {
-        Object.entries(inCart).map(([key, value]) => 
-        <ListItem button key={key}>
-          <CartCard prod_info={value} /> 
-        </ListItem> )
+        Object.entries(inCart).map(([key, value]) => {
+          if (value.quantity > 0){
+            return(
+              <ListItem button key={key}>
+              <CartCard prod_info={value} /> 
+            </ListItem> 
+            )
+          }
+        })
       }
       </List>
       <Divider />
@@ -46,14 +53,14 @@ const App = () => {
 
   const handleDrawerOpen = () => {
     setVisible(true);
-    setInCart(inCart);
+    console.log(inCart)
   };
 
   const handleDrawerClose = () => {
     setVisible(false);
   };
 
-  const CartDrawer = (data) => {
+  const CartDrawer = () => {
     return(
     <div>
       <React.Fragment>
@@ -94,6 +101,7 @@ const App = () => {
 
   const CartCard = (prod_info) => {
     let item = prod_info.prod_info;
+    var newCart = inCart;
     return(
     <div style={{margin: 5, display: 'flex', flexDirection:'row'}}>
       <img src={'data/products/' + item.sku + '_2.jpg'} alt={item.title} height={100}/>
@@ -102,7 +110,35 @@ const App = () => {
         <Typography>M | {item.description} </Typography>
         <Typography>Quantity: {item.quantity} </Typography>
         <Typography>{format(item.price)}</Typography>
+        <div>
+          <Button
+            onClick={() => {
+              if((item.quantity - 1) === 0){
+                newCart[item.sku] = null
+              }else{
+                newCart[item.sku] -= 1
+              }
+              setInCart(newCart)
+            }}
+            variant='outlined'>
+            -
+          </Button>
+          <Button onClick={() => {
+            newCart[item.sku].quantity += 1
+            setInCart(newCart)
+          }}             
+          variant='outlined'>
+            +
+          </Button>
+        </div>
       </div>
+      <Button 
+          onClick={() => {
+            newCart[item.sku] = null
+            setInCart(newCart)
+        }}>
+          X
+        </Button>
     </div>
     )
   }
@@ -159,7 +195,7 @@ const App = () => {
 
   return (
     <Container style={{display:'flex', flexDirection: 'column'}}>
-      <CartDrawer data={data} style={{flex: 1, float: 'right'}}/>
+      <CartDrawer />
       <div style={{display: 'flex',flexDirection: 'row', flexWrap:'wrap', justify:'center', alignItems:'center', marginTop: 100}}>
         {products.map(product => {return(<Card key={product.sku} prod_info={product} />)})}
       </div>

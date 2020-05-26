@@ -3,15 +3,26 @@ import {Container, Grid, Typography, Button, Toolbar, Paper, List,
         Divider, ListItem, IconButton, Drawer, AppBar} from '@material-ui/core';
 import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import inven from '../inventory.json';
+// import inven from '../inventory.json';
+import firebase from './Firebase'
+// import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+
+const db = firebase.database().ref();
 
 const App = () => {
   const [data, setData] = useState({});
   const products = Object.values(data);
   const [inCart, setInCart] = useState({});
   const [visible, setVisible] = useState(false);
-  const inventory = inven;
+  const [inventory, setInventory] = useState({});
 
+  useEffect(() => {
+    const handleData = snap => {
+      if (snap.val()) setInventory(snap.val());
+    };
+    db.on('value', handleData, error => alert(error));
+    return () => { db.off('value', handleData); };
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -142,18 +153,12 @@ const App = () => {
       <Button 
           onClick={() => {
             const returned = item
-            if(returned.S){
-              inventory[returned.sku].S += returned.S;
-            }
-            if(item.M){
-              inventory[returned.sku].M += returned.M;
-            }
-            if(item.L){
-              inventory[returned.sku].L += returned.L;
-            }
-            if(item.XL){
-              inventory[returned.sku].XL += returned.XL;
-            } 
+            {['S', 'M', 'L', 'XL'].map(size => {
+              if(returned.size){
+                db.child(returned.sku).child(size).update(inventory[returned.sku].size += returned.size)
+                .catch(error => alert(error));
+              }
+            })}
             newCart[item.sku] = null
             handleNewCart(newCart)
         }}>
@@ -183,7 +188,8 @@ const App = () => {
                   {inventory[prod_info.sku.toString()][value] === 0 ? <div /> :
                   <Button 
                   onClick={() => {
-                    inventory[prod_info.sku.toString()][value]-=1
+                    db.child(prod_info.sku).child(value).update(inventory[prod_info.sku.toString()][value]-=1)
+                    .catch(error => alert(error));
                     if (inCart[prod_info.sku] && inCart[prod_info.sku][value]){
                       newCart[prod_info.sku][value] += 1;
                       handleNewCart(newCart);

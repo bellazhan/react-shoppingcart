@@ -1,13 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import {Container, Grid, Typography, Button, Toolbar, Paper, List, 
         Divider, ListItem, IconButton, Drawer, AppBar} from '@material-ui/core';
+import {Title, Message } from 'rbx';
 import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-// import inven from '../inventory.json';
 import firebase from './Firebase'
-// import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 
 const db = firebase.database().ref();
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    signInSuccessWithAuthResult: () => false
+  }
+};
+
+const Banner = ({ user}) => (
+  <React.Fragment>
+    { user ? <Welcome user={ user } /> : <SignIn /> }
+  </React.Fragment>
+);
+
+const SignIn = () => (
+  <StyledFirebaseAuth
+    uiConfig={uiConfig}
+    firebaseAuth={firebase.auth()}
+  />
+);
+
+const Welcome = ({ user }) => (
+  <Message color="info">
+    <Message.Header>
+      Welcome, {user.displayName}
+      <Button primary onClick={() => firebase.auth().signOut()}>
+        Log out
+      </Button>
+    </Message.Header>
+  </Message>
+);
 
 const App = () => {
   const [data, setData] = useState({});
@@ -15,6 +49,11 @@ const App = () => {
   const [inCart, setInCart] = useState({});
   const [visible, setVisible] = useState(false);
   const [inventory, setInventory] = useState({});
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged(setUser);
+  }, []);
 
   useEffect(() => {
     const handleData = snap => {
@@ -230,6 +269,7 @@ const App = () => {
 
   return (
     <Container style={{display:'flex', flexDirection: 'column'}}>
+      <Banner user={user}/>
       <CartDrawer />
       <div style={{display: 'flex',flexDirection: 'row', flexWrap:'wrap', justify:'center', alignItems:'center', marginTop: 100}}>
         {products.map(product => {return(<Card key={product.sku} prod_info={product} />)})}

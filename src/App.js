@@ -3,12 +3,15 @@ import {Container, Grid, Typography, Button, Toolbar, Paper, List,
         Divider, ListItem, IconButton, Drawer, AppBar} from '@material-ui/core';
 import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import inven from '../inventory.json';
 
 const App = () => {
   const [data, setData] = useState({});
   const products = Object.values(data);
   const [inCart, setInCart] = useState({});
   const [visible, setVisible] = useState(false);
+  const inventory = inven;
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -22,20 +25,21 @@ const App = () => {
   function getTotal(){
     var total = 0;
     Object.entries(inCart).map(([key, value]) => {
+      const quantity = getCartShirts(value)
       if (value){
-        total += value.price * value.quantity;
+        total += value.price * quantity;
       }
     })
     return total;
   }
 
-  const list = () => {
+  const CartList = () => {
     return(
     <div role="presentation">
       <List>
       {
         Object.entries(inCart).map(([key, value]) => {
-          if (value.quantity > 0){
+          if (value){
             return(
               <ListItem button key={key}>
               <CartCard prod_info={value} /> 
@@ -53,12 +57,16 @@ const App = () => {
 
   const handleDrawerOpen = () => {
     setVisible(true);
-    console.log(inCart)
   };
 
   const handleDrawerClose = () => {
     setVisible(false);
   };
+
+  const handleNewCart = (newCart) => {
+    setInCart(newCart);
+    setVisible(true);
+  }
 
   const CartDrawer = () => {
     return(
@@ -92,50 +100,62 @@ const App = () => {
               Shopping Cart
             </Typography>
           </Toolbar>
-          {list()}
+          <CartList />
         </Drawer>
       </React.Fragment>
     </div>
     )
   }
 
+  const getCartShirts = (item) => {
+    var count = 0;
+    if (item){
+      if(item.S){
+        count += item.S;
+      }
+      if(item.M){
+        count += item.M;
+      }
+      if(item.L){
+        count += item.L;
+      }
+      if(item.XL){
+        count += item.XL;
+      } 
+    }    
+    return count;
+  }
+
   const CartCard = (prod_info) => {
     let item = prod_info.prod_info;
+    const numItem = getCartShirts(item);
     var newCart = inCart;
     return(
     <div style={{margin: 5, display: 'flex', flexDirection:'row'}}>
       <img src={'data/products/' + item.sku + '_2.jpg'} alt={item.title} height={100}/>
       <div style={{display: 'flex', flexDirection: 'column'}}>
         <Typography>{item.title}</Typography>
-        <Typography>M | {item.description} </Typography>
-        <Typography>Quantity: {item.quantity} </Typography>
+        <Typography>{item.description} </Typography>
+        <Typography>Quantity: {numItem} </Typography>
         <Typography>{format(item.price)}</Typography>
-        <div>
-          <Button
-            onClick={() => {
-              if((item.quantity - 1) === 0){
-                newCart[item.sku] = null
-              }else{
-                newCart[item.sku] -= 1
-              }
-              setInCart(newCart)
-            }}
-            variant='outlined'>
-            -
-          </Button>
-          <Button onClick={() => {
-            newCart[item.sku].quantity += 1
-            setInCart(newCart)
-          }}             
-          variant='outlined'>
-            +
-          </Button>
-        </div>
       </div>
       <Button 
           onClick={() => {
+            const returned = item
+            if(returned.S){
+              inventory[returned.sku].S += returned.S;
+            }
+            if(item.M){
+              inventory[returned.sku].M += returned.M;
+            }
+            if(item.L){
+              inventory[returned.sku].L += returned.L;
+            }
+            if(item.XL){
+              inventory[returned.sku].XL += returned.XL;
+            } 
             newCart[item.sku] = null
-            setInCart(newCart)
+            handleNewCart(newCart)
         }}>
           X
         </Button>
@@ -145,6 +165,7 @@ const App = () => {
 
   const Card = ({prod_info}) => {
     var newCart = inCart;
+    const numShirts = getNumShirts(inventory[prod_info.sku.toString()]);
     return(
     <div style={{margin: 15, justifyContent: 'center', alignItems: 'center'}}>
       <Paper variant='outlined' style={{width: 300, height: 360}}>
@@ -153,24 +174,36 @@ const App = () => {
           <Typography variant='h6'>{prod_info.title}</Typography>
           <Typography>{prod_info.description}</Typography>
           <Typography>{format(prod_info.price)}</Typography>
-          <Sizes />
-          <Button 
-            onClick={() => {
-              if (inCart[prod_info.sku]){
-                newCart[prod_info.sku].quantity += 1;
-                setInCart(newCart);
-                handleDrawerOpen();
-              }
-              else{
-                newCart[prod_info.sku] = prod_info;
-                newCart[prod_info.sku].quantity = 1;
-                setInCart(newCart);
-                handleDrawerOpen();
-              }            
-            }}
-          >
-            Add to Cart
-          </Button>
+          {numShirts === 0 ? 
+          <Typography variant='h6'>Out of Stock</Typography> :
+          <Grid container spacing={1}>
+            {Object.keys(inventory[prod_info.sku.toString()]).map((value) => {
+              return(
+                <Grid key={value} item>
+                  {inventory[prod_info.sku.toString()][value] === 0 ? <div /> :
+                  <Button 
+                  onClick={() => {
+                    inventory[prod_info.sku.toString()][value]-=1
+                    if (inCart[prod_info.sku] && inCart[prod_info.sku][value]){
+                      newCart[prod_info.sku][value] += 1;
+                      handleNewCart(newCart);
+                      handleDrawerOpen();
+                    }
+                    else{
+                      newCart[prod_info.sku] = prod_info;
+                      newCart[prod_info.sku][value] = 1;
+                      handleNewCart(newCart);
+                      handleDrawerOpen();
+                    }          
+                  }} 
+                  size='small'>
+                    {value}
+                  </Button>}
+                </Grid>
+              )}
+            )}
+          </Grid>
+          } 
         </div>
       </Paper>
     </div>
@@ -180,17 +213,13 @@ const App = () => {
   function format(num) {
     return '$' + num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
   }
-  
-  const Sizes = () => {
-    return(
-    <Grid container justify="left" spacing={1}>
-        {["S", "M", "L", "XL"].map((value) => (
-        <Grid key={value} item>
-            <Button size='small'>{value}</Button>
-        </Grid>
-        ))}
-    </Grid>
-    )
+
+  const getNumShirts = (data) => {
+    var count = 0;
+    for(var d in data){
+      count += data[d]
+    }
+    return count
   }
 
   return (
